@@ -1,52 +1,78 @@
-from django.shortcuts import render, redirect
-from django.forms import ModelForm
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import *
-from django import forms
+from .forms import *
 from bs4 import BeautifulSoup
 import requests
+from django.contrib import messages
 # from django.views.generic import CreateView, ListView
 
 
 def home_view(request):
     posts = Post.objects.all()
-    return render(request, 'posts/home.html', {'posts' : posts})
+    return render(request, "posts/home.html", {"posts": posts})
 
-class PostCreateForm(ModelForm):
-    class Meta:
-        model = Post
-        fields = ['url', 'body']
-        labels = {
-            'body' : 'Caption',
-        }
-        widgets = {
-            'body' : forms.Textarea(attrs={'rows': 3, 'placeholder': 'Add a caption ...', 'class': 'font1 text-4xl'}),
-            'url' : forms.TextInput(attrs={'placeholder': 'Add url  ...'}),
-        }
 
 def post_create_view(request):
     form = PostCreateForm()
-    
-    if request.method == 'POST':
+
+    if request.method == "POST":
         form = PostCreateForm(request.POST)
         if form.is_valid():
             post = form.save(commit=False)
-            
-            website = requests.get(form.data['url'])
-            sourcecode = BeautifulSoup(website.text, 'html.parser')
-            
-            find_image = sourcecode.select('meta[content^="https://live.staticflickr.com/"]')
-            image = find_image[0]['content']
+
+            website = requests.get(form.data["url"])
+            sourcecode = BeautifulSoup(website.text, "html.parser")
+
+            find_image = sourcecode.select(
+                'meta[content^="https://live.staticflickr.com/"]'
+            )
+            image = find_image[0]["content"]
             post.image = image
-            
-            find_title = sourcecode.select('h1.photo-title')
+
+            find_title = sourcecode.select("h1.photo-title")
             title = find_title[0].text.strip()
             post.title = title
-            
-            find_artist = sourcecode.select('a.owner-name')
+
+            find_artist = sourcecode.select("a.owner-name")
             artist = find_artist[0].text.strip()
             post.artist = artist
-            
+
             post.save()
+            return redirect("home")
+
+    return render(request, "posts/post_create.html", {"form": form})
+
+
+def post_delete_view(request, pk):
+    post = get_object_or_404(Post, id=pk)
+
+    if request.method == "POST":
+        post.delete()
+        messages.success(request, "Post deleted")
+        return redirect("home")
+
+    return render(request, "posts/post_delete.html", {"post": post})
+
+
+def post_edit_view(request, pk):
+    post = get_object_or_404(Post, id=pk)
+    form = PostEditForm(instance=post)
+    
+    if request.method == "POST":
+        form = PostEditForm(request.POST ,instance=post)
+        if form.is_valid:
+            form.save()
+            messages.success(request, 'Post updated')
             return redirect('home')
     
-    return render(request, 'posts/post_create.html', {'form' : form})
+    context = {
+        'post' : post,
+        'form' : form
+    }
+    return render(request, "posts/post_edit.html", context)
+
+def post_page_view(request, pk):
+    # post = Post.objects.get(id=pk)
+    post = get_object_or_404(Post, id=pk)
+    return render(request, 'posts/post_page.html', {'post' : post})
+
