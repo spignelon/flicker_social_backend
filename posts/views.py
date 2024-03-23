@@ -7,12 +7,11 @@ from django.contrib import messages
 # from django.views.generic import CreateView, ListView
 
 
-def home_view(request):
-    posts = Post.objects.all()
-    return render(request, "posts/home.html", {"posts": posts})
-
-def category_view(request, tag):
-    posts = Post.objects.filter(tags__slug=tag)
+def home_view(request, tag=None):
+    if tag:
+        posts = Post.objects.filter(tags__slug=tag)
+    else:
+        posts = Post.objects.all()
     return render(request, "posts/home.html", {"posts": posts})
 
 
