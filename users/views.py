@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
+from django.http import Http404
 from .forms import *
 
 
@@ -7,7 +8,10 @@ def profile_view(request, username=None):
     if username:
         profile = get_object_or_404(User, username=username).profile
     else:
-        profile = request.user.profile
+        try:
+            profile = request.user.profile
+        except:
+            raise Http404()
     return render(request, "users/profile.html", {"profile": profile})
 
 
