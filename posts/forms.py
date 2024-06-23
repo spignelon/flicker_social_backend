@@ -34,3 +34,18 @@ class PostEditForm(ModelForm):
             "body" : forms.Textarea(attrs={"rows": 3, "class": "font1 text-4xl"}),
             "tags" : forms.CheckboxSelectMultiple(),
         }
+
+class CommentCreateForm(ModelForm):
+    class Meta:
+        model = Comment
+        fields = ["body"]
+        labels = {
+            "body": "",
+        }
+        widgets = {
+            "body": forms.Textarea(
+                attrs={
+                    "placeholder": "Add a comment ...",
+                }
+            ),
+        }
